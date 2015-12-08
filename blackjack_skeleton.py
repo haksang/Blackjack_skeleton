@@ -19,22 +19,23 @@ CARD_SIZE = (40, 80)
 class Card(object):
 
   """A card need to have an image"""
-  def __init__(self, face, suit):
+  def __init__(self, suit, face):
       self.face = face
       self.suit = suit
+      self.image = Image(image_path + str(self.suit) + "_" + str(self.face) + ".gif")
 
   """Returns the string of a card (example : "8 of Diamonds") """
   def __str__(self):
-    return str(self.face) + " of " + self.suit
+      return str(self.face) + " of " + self.suit
 
   """Returns the face value of the card."""
   def value(self):
-      if ((str(self.face) == 'JACK') or (str(self.face) == 'Queen') or (str(self.face) == 'King')):
+      if ((self.face == 'JACK') or (self.face == 'Queen') or (self.face == 'King')):
           return 10
-      elif (str(self.face) == 'Ace'):
+      elif (self.face == 'Ace'):
           return 11
       else:
-          return self.face
+          return int(self.face)
 # --------------------------------------------------------------------
 
 """A deck of cards."""
@@ -42,11 +43,15 @@ class Deck(object):
 
   """Create a deck of 52 cards and shuffle them."""
   def __init__(self):
-
+      self.card = []
+      for i in range(len(SUITS)):
+          for j in range(len(FACES)):
+              self.card.append([SUITS[i],FACES[j]])
+      random.shuffle(self.card)
 
   """Draw the top card from the deck."""
   def draw(self):
-
+      return self.card.pop()
 # --------------------------------------------------------------------
 
 """Graphical representation of a card."""
@@ -74,28 +79,40 @@ class Hand(object):
 
   """Create an empty hand displayed at indicated position on canvas."""
   def __init__(self, x, y, canvas):
-
+      self.hand = Layer()
+      self.handList = []
+      self.graphics = []
+      self.hand.moveTo(x,y)
+      canvas.add(self.hand)
 
   """Make hand empty."""
   def clear(self):
+      #not yet
+      self.hand.remove(1)
 
   """Add a new card to the hand."""
   def add(self, card, hidden = False):
+      self.card = Card(card[0],card[1])
+      self.handList.append(self.card)
+      if (hidden == True):
+          self.graphics.append(CardGraphics(self.card, True))
+      elif (hidden == False):
+          self.graphics.append(CardGraphics(self.card, False))
 
   """Make a hidden card(first card) in his hand visible."""
   def show(self):
+      self.graphics[0].CardGraphics.show()
 
   """Return value of the hand."""
   def value(self):
+      return self.handList[0].value() + self.handList[1].value()
 
 # --------------------------------------------------------------------
 
-"""A graphical Blackjack table for playing Blackjack."""
+"""A graphical Blackjack for playing Blackjack."""
 class Table(object):
-
   def __init__(self):
     self.canvas = Canvas(600, 400, 'dark green', 'Black Jack')
-    """40 80"""
     self.player = Hand(CARD_SIZE[0], CARD_SIZE[1], self.canvas)
     self.dealer = Hand(CARD_SIZE[0], 3 * CARD_SIZE[1], self.canvas)
 
@@ -134,10 +151,10 @@ class Table(object):
       self.score[i].setMessage("")
 
   def set_score(self, which, text):
-    self.score[which].setMessage(text)
+      self.score[which].setMessage(text)
 
   def show_message(self, text):
-    self.message.setMessage(text)
+      self.message.setMessage(text)
 
   def ask(self, prompt):
     self.question.setMessage(prompt)
@@ -148,6 +165,7 @@ class Table(object):
         sys.exit(1)
       if d == "keyboard":
         key = e.getKey()
+        print key
         if key == 'y':
           self.question.setMessage(prompt+" "+key)
           #time.sleep(30)
@@ -174,6 +192,7 @@ def blackjack(table):
   table.set_score(0, str(table.player.value()))
 
   # player's turn to draw cards
+
   while table.player.value() < 21:
     if not table.ask("Would you like another card?"):
       break
@@ -186,7 +205,6 @@ def blackjack(table):
     table.show_message("You went over 21! You lost!")
     table.dealer.show()  # make the hidden card of dealer visible
     return -1
-
   table.set_score(1, str(table.dealer.value()))
   while table.dealer.value() < 17:
     table.dealer.add(deck.draw())
