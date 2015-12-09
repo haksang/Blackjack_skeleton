@@ -30,7 +30,7 @@ class Card(object):
 
   """Returns the face value of the card."""
   def value(self):
-      if ((self.face == 'JACK') or (self.face == 'Queen') or (self.face == 'King')):
+      if ((self.face == 'Jack') or (self.face == 'Queen') or (self.face == 'King')):
           return 10
       elif (self.face == 'Ace'):
           return 11
@@ -60,7 +60,6 @@ class CardGraphics(object):
   def __init__(self, card, hidden = False):
     self.l = Layer()      #layer for a card image
     self.hidden = hidden  # False : hidden card, True : visible card
-
     self.bg = Image(image_path+"Back.gif")
     if hidden:
       self.bg.setDepth(0)
@@ -76,45 +75,63 @@ class CardGraphics(object):
 
 """A hand of cards displayed on a table."""
 class Hand(object):
-
   """Create an empty hand displayed at indicated position on canvas."""
   def __init__(self, x, y, canvas):
-      self.hand = Layer()
-      self.handList = []
+      self.ground = Layer()
+      self.ground.moveTo(x,y)
+      self.originx = x
+      self.originy = y-80
+      self.x = x
+      self.y = y-80
+      canvas.add(self.ground)
+      self.hand = []
       self.graphics = []
-      self.hand.moveTo(x,y)
-      canvas.add(self.hand)
+      self.sum = 0
+      self.returnsum = 0
 
   """Make hand empty."""
   def clear(self):
-      #not yet
-      self.hand.remove(1)
-
+      del self.hand[:]
+      del self.graphics[:]
+      self.ground.clear()
+      self.x = self.originx
+      self.y = self.originy
   """Add a new card to the hand."""
   def add(self, card, hidden = False):
       self.card = Card(card[0],card[1])
-      self.handList.append(self.card)
+      self.hand.append(self.card)
       if (hidden == True):
           self.graphics.append(CardGraphics(self.card, True))
+          self.graphics[-1].l.move(self.x,self.y)
+          self.graphics[-1].l.setDepth(self.x)
+          self.ground.add(self.graphics[-1].l)
+          self.x += 40
       elif (hidden == False):
-          self.graphics.append(CardGraphics(self.card, False))
+          self.graphics.append(CardGraphics(self.card))
+          self.graphics[-1].l.move(self.x,self.y)
+          self.graphics[-1].l.setDepth(self.x)
+          self.ground.add(self.graphics[-1].l)
+          self.x += 40
 
   """Make a hidden card(first card) in his hand visible."""
   def show(self):
-      self.graphics[0].CardGraphics.show()
+      self.graphics[0].show()
 
   """Return value of the hand."""
   def value(self):
-      return self.handList[0].value() + self.handList[1].value()
-
+      for i in range(len(self.hand)):
+          self.sum = self.sum + self.hand[i].value()
+      self.returnsum = self.sum
+      self.sum = 0
+      return self.returnsum
 # --------------------------------------------------------------------
 
 """A graphical Blackjack for playing Blackjack."""
 class Table(object):
   def __init__(self):
-    self.canvas = Canvas(600, 400, 'dark green', 'Black Jack')
+    self.canvas = Canvas(600, 400, 'dark green', 'Black Jack 2011312373 LEE HAK SANG')
     self.player = Hand(CARD_SIZE[0], CARD_SIZE[1], self.canvas)
-    self.dealer = Hand(CARD_SIZE[0], 3 * CARD_SIZE[1], self.canvas)
+    self.dealer = Hand(CARD_SIZE[0], 2 * CARD_SIZE[1], self.canvas)
 
     self.score = [ Text(), Text() ]
     for i in range(2):
@@ -165,7 +182,7 @@ class Table(object):
         sys.exit(1)
       if d == "keyboard":
         key = e.getKey()
-        print key
+
         if key == 'y':
           self.question.setMessage(prompt+" "+key)
           #time.sleep(30)
@@ -196,7 +213,6 @@ def blackjack(table):
   while table.player.value() < 21:
     if not table.ask("Would you like another card?"):
       break
-
     table.player.add(deck.draw())
     table.set_score(0, str(table.player.value()))
 
@@ -205,6 +221,7 @@ def blackjack(table):
     table.show_message("You went over 21! You lost!")
     table.dealer.show()  # make the hidden card of dealer visible
     return -1
+
   table.set_score(1, str(table.dealer.value()))
   while table.dealer.value() < 17:
     table.dealer.add(deck.draw())
@@ -240,7 +257,7 @@ def game_loop():
 		if not table.ask("Another round?"):
 			break
 		table.clear()
-	table.close()
+	table.canvas.close()
 	return
 game_loop()
 
